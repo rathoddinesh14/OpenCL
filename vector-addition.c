@@ -44,11 +44,16 @@ int main()
     printf("Platform Name: %s\n", platform_name);
 
     /* Get a list of devices(cpu or gpu) supported for available OpenCL platforms.*/
-    if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_ALL, 1, &device_id, &num_of_devices) != CL_SUCCESS)
+    if (clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_CPU, 1, &device_id, &num_of_devices) != CL_SUCCESS)
     {
         printf("Not getting Device id\n");
         return 1;
     }
+
+    // print the device name
+    char device_name[100];
+    clGetDeviceInfo(device_id, CL_DEVICE_NAME, 100, device_name, NULL);
+    printf("Device Name: %s\n", device_name);
 
     printf("Enter the size of arrays\n");
     scanf("%d", &arraysize);
