@@ -97,7 +97,22 @@ Machine::Machine() {
 }
 
 Machine::~Machine() {
+    
+    for (int i = 0; i < m_kernels.size(); i++) {
+        if (m_kernels[i] != NULL)
+            clReleaseKernel(m_kernels[i]);
+    }
+
+    if (m_program != NULL)
+        clReleaseProgram(m_program);
+    
+    if (m_cmd_queue != NULL)
+        clReleaseCommandQueue(m_cmd_queue);
+    
     delete[] m_platforms;
+
+    if (m_context != NULL)
+        clReleaseContext(m_context);
 }
 
 cl_uint Machine::get_num_platforms() {
@@ -155,6 +170,25 @@ void Machine::create_single_context() {
     }
 }
 
+void Machine::create_cmd_queue() {
+    
+    if (m_context == NULL) {
+        cout << "error: m_context is NULL" << endl;
+        exit(1);
+    }
+
+    cl_int status;
+
+    // create command queue
+    m_cmd_queue = clCreateCommandQueue(m_context, m_platforms[m_platform_id].devices[m_device_id], 0, &status);
+
+    // print error message
+    if (status != CL_SUCCESS) {
+        cout << "error: clCreateCommandQueue" << endl;
+        exit(1);
+    }
+}
+
 void Machine::print_context_info() {
     // get context info
     size_t context_info_size = 0;
@@ -172,4 +206,85 @@ void Machine::print_context_info() {
     cout << "context id: " << m_context << endl;
     cout << "device id: " << device_id << endl;
     cout << "----------------------------------------------------" << endl;
+}
+
+cl_context Machine::get_context() {
+    return m_context;
+}
+
+cl_command_queue Machine::get_cmd_queue() {
+    return m_cmd_queue;
+}
+
+void Machine::create_build_program(const char *filename) {
+
+    if (m_context == NULL) {
+        cout << "error: m_context is NULL" << endl;
+        exit(1);
+    }
+
+    // reading file into buffer
+    FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        cout << "error: fopen" << endl;
+        exit(1);
+    }
+
+    fseek(fp, 0, SEEK_END);
+    size_t file_size = ftell(fp);
+    rewind(fp);
+
+    char *buffer = new char[file_size + 1];
+    fread(buffer, file_size, 1, fp);
+    buffer[file_size] = '\0';
+    fclose(fp);
+
+    // create program
+    cl_int status;
+    m_program = clCreateProgramWithSource(m_context, 1, (const char **)&buffer, NULL, &status);
+
+    // print error message
+    if (status != CL_SUCCESS) {
+        cout << "error: clCreateProgramWithSource" << endl;
+        exit(1);
+    }
+
+    // build program
+    status = clBuildProgram(m_program, 1, &m_platforms[m_platform_id].devices[m_device_id], NULL, NULL, NULL);
+
+    // print error message
+    if (status != CL_SUCCESS) {
+        cout << "error: clBuildProgram" << endl;
+        exit(1);
+    }
+}
+
+void Machine::add_kernel(const char *kernel_name) {
+    cl_int status;
+
+    // create kernel
+    cl_kernel kernel = clCreateKernel(m_program, kernel_name, &status);
+
+    // print error message
+    if (status != CL_SUCCESS) {
+        cout << "error: clCreateKernel" << endl;
+        exit(1);
+    }
+
+    // add kernel to vector
+    m_kernels.push_back(kernel);
+}
+
+cl_kernel Machine::get_kernel(const char *kernel_name) {
+    for (int i = 0; i < m_kernels.size(); i++) {
+        char cur_kernel_name[100];
+
+        // get kernel name
+        clGetKernelInfo(m_kernels[i], CL_KERNEL_FUNCTION_NAME, sizeof(cur_kernel_name), cur_kernel_name, NULL);
+
+        if (strcmp(kernel_name, cur_kernel_name) == 0) {
+            return m_kernels[i];
+        }
+    }
+    return NULL;
 }
