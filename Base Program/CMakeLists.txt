@@ -1,16 +1,11 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.1)
 
-# set the project name
 project(HelloWorld)
 
-# add the executable
-add_executable(HelloWorld main.cpp)
+find_package(OpenCL REQUIRED)
 
-# add the library
-add_library(hello hello.cpp)
+add_executable(HelloWorld
+    src/main.cpp
+    src/machine.cpp)
 
-# add the executable
-add_executable(HelloWorld main.cpp)
-
-# link the library
-target_link_libraries(HelloWorld hello)
+target_link_libraries(HelloWorld -lOpenCL)
