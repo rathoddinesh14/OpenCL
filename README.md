@@ -13,7 +13,7 @@
 <!-- Image Histogram -->
 ### 2. [Image Histogram](Image%20Histogram)
 	Program to calculate histogram of an image.
-	![Image Histogram](Image%20Histogram/assets/cat.bmp)
+![Image Histogram](Image%20Histogram/assets/cat.bmp)
 
 ## References
 
